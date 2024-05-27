@@ -19,7 +19,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
-  //const tempQuery = "interstellar";
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
@@ -38,12 +37,15 @@ export default function App() {
   }
 
   useEffect(() => {
+    //abort search requests to avoid race conditions
+    const controller = new AbortController();
     const fetchMovies = async () => {
       setLoading(true);
       setError(null);
       try {
         const response = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
+          { signal: controller.signal }
         );
 
         if (!response.ok) {
@@ -58,9 +60,12 @@ export default function App() {
         }
 
         setMovies(data.Search);
-        //console.log(data.Search);
+        setError("");
       } catch (err) {
-        setError(err.message);
+        //ignore error from controller abort
+        if (err.name !== "AbortError") {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -70,7 +75,14 @@ export default function App() {
       setError(null);
       return;
     }
+
+    handleCloseMovie();
     fetchMovies();
+
+    // each time there is a new key stroke the following clean function runs terminating the last search
+    return function () {
+      controller.abort();
+    };
   }, [query]);
 
   return (
