@@ -7,18 +7,17 @@ import Spinner from "./spinner/spinner.component";
 import { WatchedSummary } from "./WatchedSummary/WatchedSummary";
 import { WatchedList } from "./WatchedList/WatchedList";
 import { Button } from "./Button/Button";
-import { HTTP_STATUS_MESSAGES } from "./Http";
-
-// API key
-const KEY = process.env.REACT_APP_OMDB_API_KEY;
+import { useMovies } from "./useMovies";
 
 export default function App() {
-  const [query, setQuery] = useState("Batman");
-  const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const { movies, loading, error } = useMovies(query);
+  const [watched, setWatched] = useState(() => {
+    //read from local storage using getItem method
+    const storedValue = localStorage.getItem("watched");
+    return JSON.parse(storedValue);
+  });
 
   function handleSelectMovie(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
@@ -35,61 +34,20 @@ export default function App() {
   function handleDeleteWatched(id) {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
-
+  // syncronize the 'watched' state with local storage
   useEffect(() => {
-    //abort search requests to avoid race conditions
-    const controller = new AbortController();
-    const fetchMovies = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
-          { signal: controller.signal }
-        );
-
-        if (!response.ok) {
-          let errorMessage = HTTP_STATUS_MESSAGES[response.status];
-          throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
-
-        if (data.Response === "False") {
-          throw new Error("Movie not found!");
-        }
-
-        setMovies(data.Search);
-        setError("");
-      } catch (err) {
-        //ignore error from controller abort
-        if (err.name !== "AbortError") {
-          setError(err.message);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (query.length < 3) {
-      setMovies([]);
-      setError(null);
-      return;
-    }
-
-    handleCloseMovie();
-    fetchMovies();
-
-    // each time there is a new key stroke the following clean function runs terminating the last search
-    return function () {
-      controller.abort();
-    };
-  }, [query]);
+    localStorage.setItem("watched", JSON.stringify(watched));
+  }, [watched]);
 
   return (
     <>
       <Navbar>
         <NavbarLogo />
-        <Search query={query} setQuery={setQuery} />
+        <Search
+          query={query}
+          setQuery={setQuery}
+          setSelectedId={setSelectedId}
+        />
         <NumResults movies={movies} />
       </Navbar>
       <Main>

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import StarRating from "../StarRating";
 import Spinner from "../spinner/spinner.component";
+import { ReactComponent as LeftArrow } from "./ArrowLeft.svg";
 
 const KEY = process.env.REACT_APP_OMDB_API_KEY;
 
@@ -14,6 +15,20 @@ export function MovieDetails({
   const [movie, setMovie] = useState({});
   const [isloading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
+
+  // count number of times user rates movie
+  const countRef = useRef(0);
+
+  useEffect(() => {
+    if (userRating) countRef.current++;
+  }, [userRating]);
+
+  const movieAlreadyRated = watched.find(
+    (movie) => movie.imdbID === selectedId
+  );
+  const watchedUserRating = watched.find(
+    (movie) => movie.imdbID === selectedId
+  )?.userRating;
 
   const {
     Title: title,
@@ -37,17 +52,11 @@ export function MovieDetails({
       imdbRating: Number(imdbRating),
       userRating,
       runtime: Number(runtime.split(" ").at(0)),
+      countRatingDecisions: countRef.current,
     };
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
-
-  const movieAlreadyRated = watched.find(
-    (movie) => movie.imdbID === selectedId
-  );
-  const watchedUserRating = watched.find(
-    (movie) => movie.imdbID === selectedId
-  )?.userRating;
 
   useEffect(
     function () {
@@ -103,7 +112,7 @@ export function MovieDetails({
         <>
           <header>
             <button className="btn-back" onClick={onCloseMovie}>
-              &larr;
+              <LeftArrow />
             </button>
             <img src={poster} alt={`Poster of ${movie}`} />
             <div className="details-overview">

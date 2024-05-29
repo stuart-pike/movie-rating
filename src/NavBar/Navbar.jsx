@@ -1,3 +1,7 @@
+import { useEffect } from "react";
+import { ReactComponent as SearchIcon } from "./search.svg";
+import { useRef } from "react";
+
 export function NavbarLogo() {
   return (
     <div className="logo">
@@ -7,17 +11,35 @@ export function NavbarLogo() {
   );
 }
 
-export function Search({ query, setQuery }) {
-  // const [query, setQuery] = useState("");
+export function Search({ query, setQuery, setSelectedId }) {
+  const inputEl = useRef(null);
+
+  useEffect(() => {
+    function callback(e) {
+      if (document.activeElement === inputEl.current) return;
+      if (e.code === "Enter") {
+        inputEl.current.focus();
+        setQuery(""); //Clear the search field
+        setSelectedId(null); //Clear the detail pane
+      }
+    }
+    document.addEventListener("keydown", callback);
+    return () => document.removeEventListener("keydown", callback);
+  }, [setQuery, setSelectedId]);
 
   return (
-    <input
-      className="search"
-      type="text"
-      placeholder="Search movies..."
-      value={query}
-      onChange={(e) => setQuery(e.target.value)}
-    />
+    <div className="search-bar">
+      <input
+        className="search-input"
+        type="text"
+        placeholder="Search movies..."
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        ref={inputEl}
+        autoFocus
+      />
+      <SearchIcon />
+    </div>
   );
 }
 
