@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 
 import StarRating from "../StarRating";
 import Spinner from "../spinner/spinner.component";
+import { useKey } from "../useKey";
 import { ReactComponent as LeftArrow } from "./ArrowLeft.svg";
 
 const KEY = process.env.REACT_APP_OMDB_API_KEY;
@@ -88,21 +89,7 @@ export function MovieDetails({
     [title]
   );
 
-  useEffect(
-    function () {
-      function callback(e) {
-        if (e.code === "Escape") {
-          onCloseMovie();
-        }
-      }
-      document.addEventListener("keydown", callback);
-      // clean up event listener to prevent them from accumulating
-      return function () {
-        document.removeEventListener("keydown", callback);
-      };
-    },
-    [onCloseMovie]
-  );
+  useKey("Escape", onCloseMovie);
 
   return (
     <div className="details">
